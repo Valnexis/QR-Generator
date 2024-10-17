@@ -7,6 +7,9 @@ import re
 from tqdm import tqdm
 import csv
 import logging
+import numpy as np
+import logging
+from concurrent.futures import ThreadPoolExecutor
 
 ## Setup logging for error logging
 logging.basicConfig(filename='qr_errors.log', level=logging.ERROR)
@@ -27,11 +30,9 @@ def is_valid_color(color):
         return True
     except ValueError:
         pass
-
     hex_pattern = r'^#[0-9A-Fa-f]{6}'
     if re.match(hex_pattern, color):
         return True
-
     logging.error(f"Invalid color: {color}")
     return False
 

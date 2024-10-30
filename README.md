@@ -5,7 +5,7 @@ This project is a simple Python script for generating QR codes using the qrcode 
 Features:
 - Generates QR codes from user input.
 - Saves QR codes as image files (.png).
-- Customizable QR code size and error correction levels.
+- Customizable QR code color, gradient, rounded corner and border options.
 
 Prerequisites:
 

@@ -1,12 +1,22 @@
 import qrcode
 from PIL import Image, ImageDraw
 
-def generate_custom_qr(data, output_file, fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False):
-    ## Generate QR code with or without border
+## Define the error correction levels
+ERROR_CORRECTION_LEVELS= {
+    "L": qrcode.constants.ERROR_CORRECT_L,
+    "M": qrcode.constants.ERROR_CORRECT_M,
+    "Q": qrcode.constants.ERROR_CORRECT_Q,
+    "H": qrcode.constants.ERROR_CORRECT_H
+}
+
+def generate_custom_qr(data, output_file, fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L"):
+    correction_level = ERROR_CORRECTION_LEVELS.get(error_correction.upper(), qrcode.constants.ERROR_CORRECT_L)
+
+    ## Generate QR code with selected error correction level and border
     border_size = 0 if borderless else 4
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        error_correction=correction_level,
         box_size=10,
         border=border_size,
     )
@@ -46,5 +56,6 @@ if __name__ == "__main__":
     gradient_rotation = int(input("Enter gradient rotation (0 for vertical, 90 for horizontal): ")) if gradient else 0
     rounded = input("Use rounded corners? (yes/no): ").strip().lower() == "yes"
     borderless = input("Generate borderless QR? (yes/no): ").strip().lower() == "yes"
+    error_correction = input("Choosee error correction level (L, M, Q, H): ").upper()
 
-    generate_custom_qr(data, output_file, fill_color, back_color, gradient, gradient_rotation, rounded, borderless)
+    generate_custom_qr(data, output_file, fill_color, back_color, gradient, gradient_rotation, rounded, borderless, error_correction)

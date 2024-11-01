@@ -1,5 +1,7 @@
 import qrcode
 from PIL import Image, ImageDraw
+import argparse
+import os
 
 ## Define the error correction levels
 ERROR_CORRECTION_LEVELS= {
@@ -49,58 +51,45 @@ def generate_qr(data, output_file, fill_color="black", back_color="white", gradi
     img.save(f"{output_file}.{extension}")
     print(f"QR code for '{data}' saved as {output_file}.{extension}")
 
-def batch_generate_qr(output_prefix="qr", fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png"):
-    source_type = input("Are the data entries in a file? (yes/no): ").strip().lower()
-
-    if source_type == "yes":
-        file_path = input("Enter the file path: ").strip()
-        try:
-            with open(file_path, 'r') as file:
-                data_list = [line.strip() for line in file if line.strip()]
-        except FileNotFoundError:
-            print(f"File '{file_path}' does not exist.")
-            return
-    else:
-        data_list = []
-        print("Enter the data for each QR code (type 'done' to finish):")
-        while True:
-            data = input("> ").strip()
-            if data.lower() == "done":
-                break
-            if data:
-                data_list.append(data)
+def batch_generate_qr(data_list, output_prefix="qr", fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png"):
 
     ## Generate QR codes for each data entry
     for i, data in enumerate(data_list, start=1):
         output_file = f"{output_prefix}_{i}"
         generate_qr(data, output_file, fill_color, back_color, gradient, gradient_rotation, rounded, borderless, error_correction, extension)
 
+def main():
+    parser = argparse.ArgumentParser(description="Generate QR code from given data")
+    parser.add_argument("mode", choices=["single", "batch"], help="Choose mode: 'single' or 'batch'")
+    parser.add_argument("--data", help="Data for single QR code (required for single mode)")
+    parser.add_argument("--file", help="File containing data for batch QR generation (one entry per line, required for batch mode)")
+    parser.add_argument("--output-prefix", default="qr_code", help="Prefix for output filenames")
+    parser.add_argument("--fill-color", default="black", help="Color of the QR")
+    parser.add_argument("--back-color", default="white", help="Color of the background")
+    parser.add_argument("--gradient", action="store_true", help="Generate gradient QR")
+    parser.add_argument("--gradient-rotation", default=0, type=int, choices=[0, 90], help="Rotation of the gradient QR")
+    parser.add_argument("--rounded", action="store_true", help="Generate rounded QR")
+    parser.add_argument("--borderless", action="store_true", help="Generate borderless QR")
+    parser.add_argument("--error-correction", choices=["L", "M", "Q", "H"], default="L", help="Error correction level")
+    parser.add_argument("--extension", default="png", choices=["png", "jpg", "jpeg"], help="File extension for output files")
+
+    args = parser.parse_args()
+
+    if args.mode == "single":
+        if not args.data:
+            parser.error("The --data argument is required for single mode.")
+        output_file = args.output_prefix
+        generate_qr(args.data, output_file, args.fill_color, args.back_color, args.gradient, args.gradient_rotation, args.rounded, args.borderless, args.error_correction, args.extension)
+
+    elif args.mode == "batch":
+        if not args.file:
+            parser.error("The --file argument is required for batch mode.")
+        try:
+            with open(args.file, "r") as file:
+                data_list = [line.strip() for line in file if line.strip()]
+            batch_generate_qr(data_list, args.output_prefix, args.fill_color, args.back_color, args.gradient, args.gradient_rotation, args.rounded, args.borderless, args.error_correction, args.extension)
+        except FileNotFoundError:
+            print("File not found. Please check the path and try again.")
+
 if __name__ == "__main__":
-    mode = input("Choose mode (single or batch): ").strip().lower()
-
-    if mode == "single":
-        data = input("Enter the data for the QR code: ")
-        output_file = input("Enter the output filename to save the QR code (e.g., qrcode.png): ")
-        fill_color = input("Enter the fill color for the QR code: ")
-        back_color = input("Enter the background color for the QR code: ")
-        gradient = input("Apply gradient? (yes/no): ").strip().lower() == "yes"
-        gradient_rotation = int(input("Enter gradient rotation (0 for vertical, 90 for horizontal): ")) if gradient else 0
-        rounded = input("Use rounded corners? (yes/no): ").strip().lower() == "yes"
-        borderless = input("Generate borderless QR? (yes/no): ").strip().lower() == "yes"
-        error_correction = input("Choosee error correction level (L, M, Q, H): ").upper()
-        extension = input("Choose the file extension (png, jpg, jpeg): ").strip().lower()
-        generate_qr(data, output_file, fill_color, back_color, gradient, gradient_rotation, rounded, borderless, error_correction, extension)
-
-    elif mode == "batch":
-        output_prefix = input("Enter the output file prefix (e.g., qrcode.png): ").strip()
-        fill_color = input("Enter the fill color for the QR code: ")
-        back_color = input("Enter the background color for the QR code: ")
-        gradient = input("Apply gradient? (yes/no): ").strip().lower() == "yes"
-        gradient_rotation = int(input("Enter gradient rotation (0 for vertical, 90 for horizontal): "))
-        rounded = input("Use rounded corners? (yes/no): ").strip().lower() == "yes"
-        borderless = input("Generate borderless QR? (yes/no): ").strip() == "yes"
-        error_correction = input("Choose error correction level (L, M, Q, H): ").upper()
-        extension = input("Choose the file extension (png, jpg, jpeg): ").strip().lower()
-        batch_generate_qr(output_prefix, fill_color, back_color, gradient, gradient_rotation, rounded, borderless, error_correction, extension)
-    else:
-        print("Invalid mode selected.")
+    main()

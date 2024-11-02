@@ -31,7 +31,7 @@ def determine_version(data_length):
         return 10
     else:
         return 15
-def generate_qr(data, output_file, fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png"):
+def generate_qr(data, output_file, fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png", logo_path=None):
     data_length = len(data)
     box_size = determine_box_size(data_length)
     version = determine_version(data_length)
@@ -67,13 +67,24 @@ def generate_qr(data, output_file, fill_color="black", back_color="white", gradi
         rounded_img.paste(img, (0, 0), mask=mask)
         img = rounded_img
 
+    ## Embed logo if provided
+    if logo_path:
+        try:
+            logo = Image.open(logo_path).convert('RGBA')
+            max_logo_size = (img.size[0] // 5, img.size[1] // 5)
+            logo.thumbnail(max_logo_size, Image.ANTIALIAS)
+            logo_position = ((img.size[0] - logo.size[0]) // 2, (img.size[1] - logo.size[1]) // 2)
+            img.paste(logo, logo_position, mask=logo)
+        except FileNotFoundError:
+            print("Logo file not found. Please check the path and try again.")
+
     img.save(f"{output_file}.{extension}")
     print(f"QR code for '{data}' saved as {output_file}.{extension}")
 
-def batch_generate_qr(data_list, output_prefix="qr", fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png"):
+def batch_generate_qr(data_list, output_prefix="qr", fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png", logo_path=None):
     for i, data in enumerate(data_list, start=1):
         output_file = f"{output_prefix}_{i}"
-        generate_qr(data, output_file, fill_color, back_color, gradient, gradient_rotation, rounded, borderless, error_correction, extension)
+        generate_qr(data, output_file, fill_color, back_color, gradient, gradient_rotation, rounded, borderless, error_correction, extension, logo_path)
 
 def main():
     parser = argparse.ArgumentParser(description="Generate QR code from given data")
@@ -89,6 +100,7 @@ def main():
     parser.add_argument("--borderless", action="store_true", help="Generate borderless QR")
     parser.add_argument("--error-correction", choices=["L", "M", "Q", "H"], default="L", help="Error correction level")
     parser.add_argument("--extension", default="png", choices=["png", "jpg", "jpeg"], help="File extension for output files")
+    parser.add_argument("--logo", help="Path to logo file")
 
     args = parser.parse_args()
 
@@ -96,7 +108,7 @@ def main():
         if not args.data:
             parser.error("The --data argument is required for single mode.")
         output_file = args.output_prefix
-        generate_qr(args.data, output_file, args.fill_color, args.back_color, args.gradient, args.gradient_rotation, args.rounded, args.borderless, args.error_correction, args.extension)
+        generate_qr(args.data, output_file, args.fill_color, args.back_color, args.gradient, args.gradient_rotation, args.rounded, args.borderless, args.error_correction, args.extension, args.logo)
 
     elif args.mode == "batch":
         if not args.file:
@@ -104,7 +116,7 @@ def main():
         try:
             with open(args.file, "r") as file:
                 data_list = [line.strip() for line in file if line.strip()]
-            batch_generate_qr(data_list, args.output_prefix, args.fill_color, args.back_color, args.gradient, args.gradient_rotation, args.rounded, args.borderless, args.error_correction, args.extension)
+            batch_generate_qr(data_list, args.output_prefix, args.fill_color, args.back_color, args.gradient, args.gradient_rotation, args.rounded, args.borderless, args.error_correction, args.extension, args.logo)
         except FileNotFoundError:
             print("File not found. Please check the path and try again.")
 

@@ -1,7 +1,6 @@
 import qrcode
 from PIL import Image, ImageDraw
 import argparse
-import os
 
 ## Define the error correction levels
 ERROR_CORRECTION_LEVELS= {
@@ -11,22 +10,42 @@ ERROR_CORRECTION_LEVELS= {
     "H": qrcode.constants.ERROR_CORRECT_H
 }
 
-def generate_qr(data, output_file, fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png"):
-    ## Set the chosen error correction level
-    correction_level = ERROR_CORRECTION_LEVELS.get(error_correction.upper(), qrcode.constants.ERROR_CORRECT_L)
+def determine_box_size(data_length):
+    ## Determine box size dynamically based on data length.
+    if data_length < 50:
+        return 10
+    elif data_length < 100:
+        return 8
+    elif data_length < 200:
+        return 6
+    else:
+        return 4
 
-    ## Generate QR code with selected error correction level and border
+def determine_version(data_length):
+    ## Determine QR version dynamically based on data length.
+    if data_length < 50:
+        return 1
+    elif data_length < 100:
+        return 5
+    elif data_length < 200:
+        return 10
+    else:
+        return 15
+def generate_qr(data, output_file, fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png"):
+    data_length = len(data)
+    box_size = determine_box_size(data_length)
+    version = determine_version(data_length)
+    correction_level = ERROR_CORRECTION_LEVELS.get(error_correction.upper(), qrcode.constants.ERROR_CORRECT_L)
     border_size = 0 if borderless else 4
     qr = qrcode.QRCode(
-        version=1,
+        version=version,
         error_correction=correction_level,
-        box_size=10,
+        box_size=box_size,
         border=border_size,
     )
     qr.add_data(data)
     qr.make(fit=True)
 
-    ## Create the QR Code image
     img = qr.make_image(fill_color=fill_color, back_color=back_color).convert('RGBA')
 
     ## Apply gradient if selected
@@ -52,8 +71,6 @@ def generate_qr(data, output_file, fill_color="black", back_color="white", gradi
     print(f"QR code for '{data}' saved as {output_file}.{extension}")
 
 def batch_generate_qr(data_list, output_prefix="qr", fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png"):
-
-    ## Generate QR codes for each data entry
     for i, data in enumerate(data_list, start=1):
         output_file = f"{output_prefix}_{i}"
         generate_qr(data, output_file, fill_color, back_color, gradient, gradient_rotation, rounded, borderless, error_correction, extension)

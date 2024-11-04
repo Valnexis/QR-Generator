@@ -37,6 +37,7 @@ def generate_qr(data, output_file, fill_color="black", back_color="white", gradi
     version = determine_version(data_length)
     correction_level = ERROR_CORRECTION_LEVELS.get(error_correction.upper(), qrcode.constants.ERROR_CORRECT_L)
     border_size = 0 if borderless else 4
+
     qr = qrcode.QRCode(
         version=version,
         error_correction=correction_level,
@@ -71,15 +72,18 @@ def generate_qr(data, output_file, fill_color="black", back_color="white", gradi
     if logo_path:
         try:
             logo = Image.open(logo_path).convert('RGBA')
+            ## Calculate the maximum size for the logo
             max_logo_size = (img.size[0] // 5, img.size[1] // 5)
             logo.thumbnail(max_logo_size, Image.ANTIALIAS)
+            ## Calculate position for centering the logo
             logo_position = ((img.size[0] - logo.size[0]) // 2, (img.size[1] - logo.size[1]) // 2)
             img.paste(logo, logo_position, mask=logo)
         except FileNotFoundError:
             print("Logo file not found. Please check the path and try again.")
 
-    img.save(f"{output_file}.{extension}")
-    print(f"QR code for '{data}' saved as {output_file}.{extension}")
+    ## Save image in specified format
+    img.save(f"{output_file}.{extension}", format=extension.upper())
+    print(f"QR code saved as {output_file}.{extension}")
 
 def batch_generate_qr(data_list, output_prefix="qr", fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png", logo_path=None):
     for i, data in enumerate(data_list, start=1):
@@ -99,7 +103,7 @@ def main():
     parser.add_argument("--rounded", action="store_true", help="Generate rounded QR")
     parser.add_argument("--borderless", action="store_true", help="Generate borderless QR")
     parser.add_argument("--error-correction", choices=["L", "M", "Q", "H"], default="L", help="Error correction level")
-    parser.add_argument("--extension", default="png", choices=["png", "jpg", "jpeg"], help="File extension for output files")
+    parser.add_argument("--extension", default="png", choices=["png", "jpg", "bmp", "tiff", "jpeg"], help="File extension for output files")
     parser.add_argument("--logo", help="Path to logo file")
 
     args = parser.parse_args()

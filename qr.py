@@ -1,5 +1,5 @@
 import qrcode
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, PngImagePlugin
 import argparse
 
 ## Define the error correction levels
@@ -31,6 +31,21 @@ def determine_version(data_length):
         return 10
     else:
         return 15
+
+def add_metadata(img, metadata):
+    ## Add metadata to the image
+    if img.format == "PNG":
+        meta = PngImagePlugin.PngInfo()
+        for key, value in metadata.items():
+            meta.add_text(key, value)
+        return meta
+    elif img.format in ["JPEG", "JPG", "TIFF"]:
+        exif = img.getexif()
+        for i, (key, value) in enumerate(metadata.items(), start=37510):
+            exif[i] = value
+        return exif
+    return None
+
 def generate_qr(data, output_file, fill_color="black", back_color="white", gradient=False, gradient_rotation=0, rounded=False, borderless=False, error_correction="L", extension="png", logo_path=None):
     data_length = len(data)
     box_size = determine_box_size(data_length)
@@ -80,6 +95,24 @@ def generate_qr(data, output_file, fill_color="black", back_color="white", gradi
             img.paste(logo, logo_position, mask=logo)
         except FileNotFoundError:
             print("Logo file not found. Please check the path and try again.")
+
+    metadata = {
+        "Data": data,
+        "Error Correction Level": error_correction,
+        "Fill Color": fill_color,
+        "Background Color": back_color,
+        "Gradient Applied": str(gradient),
+        "Rounded Corners": str(rounded),
+        "Borderless": str(borderless)
+    }
+    extra_info = add_metadata(img, metadata)
+
+    ## Save image with metadata (if applicable)
+    if extra_info:
+        img.save(f"{output_file}.{extension}", format=extension.upper(), pnginfo=extra_info if extension == "png" else None)
+    else:
+        img.save(f"{output_file}.{extension}", format=extension.upper())
+    print(f"QR code saved as {output_file}.{extension}")
 
     ## Save image in specified format
     img.save(f"{output_file}.{extension}", format=extension.upper())
